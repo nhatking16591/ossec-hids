@@ -34,6 +34,7 @@ int OS_IsValidID(const char *id);
 int IDExist(const char *id);
 int NameExist(const char *u_name);
 char *getFullnameById(const char *id);
+char *getFullKeyByName(const char *u_name);
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id);
 
 /* Print available agents */

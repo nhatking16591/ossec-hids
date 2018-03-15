@@ -331,11 +331,10 @@ int main(int argc, char **argv)
                     merror("%s: ERROR: Invalid request for new agent from: %s", ARGV0, srcip);
                 } else {
                     int acount = 2;
-                    char fname[2048 + 1];
+
                     char response[2048 + 1];
                     char *finalkey = NULL;
                     response[2048] = '\0';
-                    fname[2048] = '\0';
                     if (!OS_IsValidName(agentname)) {
                         merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
                         snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
@@ -346,29 +345,19 @@ int main(int argc, char **argv)
                         exit(0);
                     }
 
-                    /* Check for duplicate names */
-                    strncpy(fname, agentname, 2048);
-                    while (NameExist(fname)) {
-                        snprintf(fname, 2048, "%s%d", agentname, acount);
-                        acount++;
-                        if (acount > 256) {
-                            merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
-                            snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
-                            SSL_write(ssl, response, strlen(response));
-                            snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                            SSL_write(ssl, response, strlen(response));
-                            sleep(1);
-                            exit(0);
+                    /* Check for duplicate names , reuse if it is duplicated*/
+                    if (NameExist(agentname)) {
+                        finalkey=getFullKeyByName(agentname);
+                    }
+                    else {
+                        /* Add the new agent */
+                        if (use_ip_address) {
+                            finalkey = OS_AddNewAgent(agentname, srcip, NULL);
+                        } else {
+                            finalkey = OS_AddNewAgent(agentname, NULL, NULL);
                         }
                     }
-                    agentname = fname;
 
-                    /* Add the new agent */
-                    if (use_ip_address) {
-                        finalkey = OS_AddNewAgent(agentname, srcip, NULL);
-                    } else {
-                        finalkey = OS_AddNewAgent(agentname, NULL, NULL);
-                    }
                     if (!finalkey) {
                         merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
                         snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
